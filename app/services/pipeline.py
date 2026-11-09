@@ -105,11 +105,10 @@ Tickets:
 
 
 def generate_release_notes(project_key: str, version: str) -> str:
-    """Return the finished release notes as Markdown. The Jira label is `v` + version."""
-    label = f"{version}"
+    """Return the finished release notes as Markdown. `version` is the Jira label, exactly as written."""
     project = get_project(project_key)
-    tickets = get_jira_tickets(project_key, label)
+    tickets = get_jira_tickets(project_key, version)
     if not tickets:
-        raise NoTicketsError(label)
-    notes = write_notes(project["name"], label, format_tickets_for_prompt(tickets))
-    return f"# {project['name']} Release Notes — {label}\n\n{notes}"
+        raise NoTicketsError(version)
+    notes = write_notes(project["name"], version, format_tickets_for_prompt(tickets))
+    return f"# {project['name']} Release Notes — {version}\n\n{notes}"

@@ -26,7 +26,7 @@ SECTIONS = {
 
 
 def render_notes(project_key: str, version: str) -> str:
-    lines = [f"# {project_key} Release Notes — v{version}", "", INTRO, ""]
+    lines = [f"# {project_key} Release Notes — {version}", "", INTRO, ""]
     for title, items in SECTIONS.items():
         lines += ["---", "", f"## {title}", ""]
         lines += [f"- {text}" for text in items]

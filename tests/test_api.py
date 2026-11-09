@@ -36,7 +36,7 @@ def test_submit_then_poll_succeeds(client):
     done = client.get(r.headers["Location"]).json()
     assert done["status"] == "succeeded"
     assert done["completed_at"] is not None
-    assert done["result"]["content"].startswith("# DEMO Release Notes — v2.4.0")
+    assert done["result"]["content"].startswith("# DEMO Release Notes — 2.4.0")
 
 
 def test_fail_key_gives_failed_job_with_http_200(client):

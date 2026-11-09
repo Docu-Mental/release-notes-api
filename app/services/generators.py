@@ -63,8 +63,7 @@ class LiveGenerator:
             return await asyncio.to_thread(pipeline.generate_release_notes, project_key, version)
         except pipeline.NoTicketsError as exc:
             raise GenerationError(
-                f"No Jira tickets in project {project_key} are labelled v{version}.",
-                {"project_key": project_key, "version": version},
+                                f"No Jira tickets in project {project_key} are labelled {version}.",
             ) from exc
         except (requests.RequestException, anthropic.APIError) as exc:
             raise GenerationError(f"A Jira or Anthropic request failed ({type(exc).__name__}).") from exc

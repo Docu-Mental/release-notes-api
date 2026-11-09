@@ -136,7 +136,7 @@ The mock generator takes about 2 seconds, so the job has usually finished by now
   "error": null,
   "result": {
     "format": "markdown",
-    "content": "# DEMO Release Notes — v2.4.0\n\nThis release introduces new security and compliance features...\n..."
+    "content": "# DEMO Release Notes — 2.4.0\n\nThis release introduces new security and compliance features...\n..."
   }
 }
 ```
@@ -153,7 +153,7 @@ curl -s -H "X-API-Key: $API_KEY" http://localhost:8000/v1/release-notes/$JOB_ID 
 The output is the finished release notes:
 
 ```text
-# DEMO Release Notes — v2.4.0
+# DEMO Release Notes — 2.4.0
 
 This release introduces new security and compliance features for the admin portal, expands multi-currency reporting capabilities, and addresses several bugs affecting transaction processing and data exports.
 
@@ -276,4 +276,8 @@ The API responds with `204 No Content` and an empty body. You can only delete jo
 
 - Browse every endpoint, parameter, and error in the [API reference](api-reference.html).
 - Automate the submit-and-poll flow with the [example script](../examples/automated-submission-with-polling.py).
+- Run the tutorial against your own Jira project in live mode:
+  1. In `.env`, set `GENERATOR=live` and fill in `JIRA_URL`, `JIRA_EMAIL`, `JIRA_TOKEN` and `ANTHROPIC_API_KEY`. The commented-out lines at the bottom of `.env.example` show the format.
+  2. Restart the server, then open `http://localhost:8000/v1/health` and check that it reports `"generator": "live"`.
+  3. Repeat steps 3 to 5, replacing `DEMO` and `2.4.0` with your Jira project key and a release version. Your tickets need the Jira label `v` plus that version, for example `v2.4.0`.
 - Tailor the release notes to your product. In `app/services/pipeline.py`, set `PRODUCT_GUIDANCE` to a sentence about your product, for example `PRODUCT_GUIDANCE = "These release notes are for a B2B payment processing platform."`. Restart the server and submit a new job. This only affects live mode.
