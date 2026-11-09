@@ -70,9 +70,9 @@ CATALOG: dict[ErrorCode, tuple[int, str, str, dict[str, Any] | None]] = {
     ErrorCode.JOB_NOT_FINISHED: (409, "The job is still queued or running, so it cannot be deleted.", "Job job_3f9a1c7e2b40 is still running.", {"status": "running"}),
     ErrorCode.VALIDATION_ERROR: (
         422,
-        "The request body or query parameters are invalid.",
+        "The request body, query parameters or path parameters are invalid.",
         "Request validation failed.",
-        {"fields": [{"field": "body.version", "message": "String should match pattern '^\\d+\\.\\d+\\.\\d+$'"}]},
+        {"fields": [{"field": "body.project_key", "message": "String should match pattern '^[A-Z][A-Z0-9_]{1,9}$'"}]},
     ),
     ErrorCode.RATE_LIMIT_EXCEEDED: (429, "Too many requests. Wait `Retry-After` seconds.", "Rate limit exceeded.", {"retry_after_seconds": 12}),
     ErrorCode.INTERNAL_ERROR: (500, "An unexpected server error occurred.", "Internal server error.", None),
@@ -88,6 +88,10 @@ def errors(*codes: ErrorCode) -> dict[int | str, dict[str, Any]]:
             status,
             {"model": ErrorResponse, "description": description, "content": {"application/json": {"examples": {}}}},
         )
+        if code is ErrorCode.RATE_LIMIT_EXCEEDED:
+            entry["headers"] = {
+                "Retry-After": {"description": "Seconds to wait before retrying.", "schema": {"type": "integer"}}
+            }
         entry["content"]["application/json"]["examples"][code.value] = {
             "summary": code.value,
             "value": {"code": code.value, "message": message, "details": details},

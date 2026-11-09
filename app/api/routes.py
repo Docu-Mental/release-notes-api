@@ -20,7 +20,11 @@ notes_router = APIRouter(
 
 JobId = Annotated[
     str,
-    Path(description="ID returned when the job was submitted.", examples=["job_3f9a1c7e2b40"]),
+    Path(
+        pattern=r"^job_[0-9a-f]{12}$",
+        description="ID returned when the job was submitted.",
+        examples=["job_3f9a1c7e2b40"],
+    ),
 ]
 
 
@@ -54,7 +58,9 @@ def get_health() -> Health:
                 }
             },
         },
-        **errors(E.MISSING_API_KEY, E.INVALID_API_KEY, E.PROJECT_NOT_FOUND, E.VALIDATION_ERROR),
+        **errors(
+            E.MISSING_API_KEY, E.INVALID_API_KEY, E.PROJECT_NOT_FOUND, E.VALIDATION_ERROR, E.RATE_LIMIT_EXCEEDED
+        ),
     },
 )
 async def create_job(
@@ -80,7 +86,7 @@ async def create_job(
     description="Returns jobs newest first, with `total` for pagination. "
     "Results are omitted here; fetch a single job to get its Markdown.",
     response_model=JobList,
-    responses=errors(E.MISSING_API_KEY, E.INVALID_API_KEY, E.VALIDATION_ERROR),
+    responses=errors(E.MISSING_API_KEY, E.INVALID_API_KEY, E.VALIDATION_ERROR, E.RATE_LIMIT_EXCEEDED),
 )
 async def list_jobs(
     limit: Annotated[int, Query(ge=1, le=100, description="Maximum number of jobs to return.")] = 20,
@@ -99,10 +105,42 @@ async def list_jobs(
     "Markdown. A `failed` job still returns `200`: the failure is described in `error`, "
     "not in the HTTP status.",
     response_model=Job,
-    responses=errors(E.MISSING_API_KEY, E.INVALID_API_KEY, E.JOB_NOT_FOUND),
+    responses=errors(
+        E.MISSING_API_KEY, E.INVALID_API_KEY, E.JOB_NOT_FOUND, E.VALIDATION_ERROR, E.RATE_LIMIT_EXCEEDED
+    ),
 )
 async def get_job(job_id: JobId) -> Job:
     job = store.get(job_id)
     if job is None:
         raise ApiError(404, E.JOB_NOT_FOUND, f"No job with ID {job_id}.", {"job_id": job_id})
     return Job.model_validate(job, from_attributes=True)
+
+
+@notes_router.delete(
+    "/{job_id}",
+    operation_id="deleteReleaseNotesJob",
+    status_code=204,
+    response_class=Response,
+    summary="Delete a release-notes job",
+    description="Permanently deletes a job and its result. Only `succeeded` and `failed` jobs can be "
+    "deleted. A job that is `queued` or `running` returns `409`.",
+    responses={
+        204: {"description": "Job deleted. The response has no body."},
+        **errors(
+            E.MISSING_API_KEY,
+            E.INVALID_API_KEY,
+            E.JOB_NOT_FOUND,
+            E.JOB_NOT_FINISHED,
+            E.VALIDATION_ERROR,
+            E.RATE_LIMIT_EXCEEDED,
+        ),
+    },
+)
+async def delete_job(job_id: JobId) -> Response:
+    job = store.get(job_id)
+    if job is None:
+        raise ApiError(404, E.JOB_NOT_FOUND, f"No job with ID {job_id}.", {"job_id": job_id})
+    if job.status in ("queued", "running"):
+        raise ApiError(409, E.JOB_NOT_FINISHED, f"Job {job_id} is still {job.status}.", {"status": job.status})
+    store.delete(job_id)
+    return Response(status_code=204)

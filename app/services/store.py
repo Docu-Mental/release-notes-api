@@ -41,6 +41,9 @@ class JobStore:
     def get(self, job_id: str) -> JobRecord | None:
         return self._jobs.get(job_id)
 
+    def delete(self, job_id: str) -> None:
+        self._jobs.pop(job_id, None)
+
     def list_jobs(self, limit: int, offset: int) -> tuple[list[JobRecord], int]:
         """Newest first. Returns one page plus the total count."""
         jobs = list(self._jobs.values())[::-1]

@@ -22,7 +22,7 @@ JOB_EXAMPLE = {
     "completed_at": "2026-11-03T10:15:02Z",
     "result": {
         "format": "markdown",
-        "content": "# DEMO 2.4.0 release notes\n\n## New features\n\n- DEMO-101: Bulk export of reports\n",
+                  "content": "# DEMO Release Notes — v2.4.0\n\nThis release introduces new security and compliance features for the admin portal.\n\n---\n\n## New Features\n\n- Administrators can now enable two-factor authentication (TOTP-based) for admin portal logins.\n",
     },
 }
 
@@ -53,11 +53,16 @@ class CreateJobRequest(BaseModel):
         "starting with a letter.",
         examples=["DEMO"],
     )
+
     version: str = Field(
-        pattern=r"^\d+\.\d+\.\d+$",
-        description="Release version in `MAJOR.MINOR.PATCH` form.",
+        min_length=1,
+        max_length=255,
+        pattern=r'^[^\s\[\]"\\]+$',
+        description="Release version, exactly as it appears in the Jira label on the release's tickets. "
+        "No spaces, square brackets, quotes or backslashes.",
         examples=["2.4.0"],
     )
+
     format: OutputFormat = Field(
         default=OutputFormat.MARKDOWN,
         description="Output format. `markdown` is the only supported value.",

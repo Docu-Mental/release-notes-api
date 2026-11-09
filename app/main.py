@@ -13,12 +13,24 @@ TAGS = [
     {"name": "Health", "description": "Service status. No authentication required."},
 ]
 
+DESCRIPTION = """
+Generates release notes from Jira tickets as asynchronous jobs. Submit a job, poll its status, then read the Markdown result.
+Mock mode returns fictitious sample release notes without Jira or Anthropic calls.
+
+### Authentication
+Send your API key in the `X-API-Key` header on every request except `GET /v1/health`.
+
+### Job lifecycle
+1. `POST /v1/release-notes` returns `202` immediately. The job is `queued`, and the `Location` header holds its URL.
+2. Poll `GET /v1/release-notes/{job_id}` until `status` is `succeeded` or `failed`.
+3. Read `result.content` (Markdown) from a succeeded job, or `error` from a failed one.
+
+Jobs are held in memory and are lost when the server restarts.
+"""
 app = FastAPI(
     title="Release Notes API",
     version=API_VERSION,
-    description="Generates release notes from Jira tickets as asynchronous jobs. "
-    "Submit a job, poll for its status, then read the Markdown result.\n\n"
-    "All endpoints except `/v1/health` require an `X-API-Key` header.",
+    description=DESCRIPTION,
     openapi_tags=TAGS,
 )
 register_error_handlers(app)

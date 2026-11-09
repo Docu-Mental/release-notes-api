@@ -1,29 +1,34 @@
-"""Sample release-notes content for mock mode. Same input always gives the same output."""
+"""Sample release-notes content for mock mode. Same input always gives the same output.
+The layout mirrors what the live pipeline produces: an intro sentence, then three sections."""
+
+INTRO = (
+    "This release introduces new security and compliance features for the admin portal, "
+    "expands multi-currency reporting capabilities, and addresses several bugs affecting "
+    "transaction processing and data exports."
+)
 
 SECTIONS = {
-    "New features": [
-        (101, "Bulk export of reports"),
-        (108, "Saved filters on the dashboard"),
+    "New Features": [
+        "Administrators can now enable two-factor authentication (TOTP-based) for admin portal logins, adding an extra layer of account security.",
+        "A new audit log export feature allows administrators to download a complete record of user actions in CSV or PDF format for compliance and regulatory reporting.",
+        "Settlement reports can now be generated in the client's local currency, with exchange rates applied as of the original transaction time.",
     ],
-    "Changes": [
-        (112, "Search results now sort by relevance by default"),
-        (115, "Session timeout increased from 15 to 30 minutes"),
+    "Improvements": [
+        "The v1 payment submission endpoint (`/v1/submit`) is now deprecated and will be retired in v4.0.0; API responses include deprecation headers, and documentation has been updated accordingly.",
+        "The API reference documentation for the v2 transaction endpoint has been updated to reflect new pagination parameters.",
     ],
-    "Fixed bugs": [
-        (120, "Export no longer fails for reports with more than 10,000 rows"),
-        (123, "Dashboard filters reset after a browser refresh"),
-        (127, "Monthly summary showed wrong totals for 31-day months"),
-    ],
-    "Known issues": [
-        (131, "PDF export may omit custom fonts on some systems"),
+    "Bug Fixes": [
+        "Fixed an issue where duplicate transaction entries could appear in the ledger after a failed webhook retry.",
+        "Reconciliation reports now display a validation error when the selected date range exceeds 90 days, rather than generating an empty file.",
+        "The webhook retry limit has been increased from 3 to 5 attempts to reduce missed notifications during brief server outages.",
     ],
 }
 
 
 def render_notes(project_key: str, version: str) -> str:
-    lines = [f"# {project_key} {version} release notes", ""]
+    lines = [f"# {project_key} Release Notes — v{version}", "", INTRO, ""]
     for title, items in SECTIONS.items():
-        lines += [f"## {title}", ""]
-        lines += [f"- {project_key}-{number}: {text}" for number, text in items]
+        lines += ["---", "", f"## {title}", ""]
+        lines += [f"- {text}" for text in items]
         lines.append("")
     return "\n".join(lines)

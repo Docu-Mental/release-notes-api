@@ -2,10 +2,14 @@
 import asyncio
 from typing import Any, Protocol
 
+import anthropic
+import requests
+
 from app.config import settings
+from app.services import pipeline
 from app.services.fixtures import render_notes
 
-# Special project keys that trigger specific mock behavior.
+# Special project keys that trigger specific mock behavior. Live mode ignores them.
 FAIL_KEY = "FAIL"
 SLOW_KEY = "SLOW"
 NOT_FOUND_KEY = "NOTFOUND"
@@ -21,8 +25,8 @@ class GenerationError(Exception):
 
 
 class Generator(Protocol):
-    """Any class with these two methods qualifies. A live Jira + Anthropic generator
-    will implement the same two methods, so the API contract does not change."""
+    """Any class with these two methods qualifies. MockGenerator and LiveGenerator both do,
+    so the API contract is the same in both modes."""
 
     async def project_exists(self, project_key: str) -> bool: ...
 
@@ -48,8 +52,28 @@ class MockGenerator:
         return render_notes(project_key, version)
 
 
+class LiveGenerator:
+    """Runs the Jira -> Claude pipeline. The pipeline blocks, so it runs in a thread."""
+
+    async def project_exists(self, project_key: str) -> bool:
+        return await asyncio.to_thread(pipeline.get_project, project_key) is not None
+
+    async def generate(self, project_key: str, version: str) -> str:
+        try:
+            return await asyncio.to_thread(pipeline.generate_release_notes, project_key, version)
+        except pipeline.NoTicketsError as exc:
+            raise GenerationError(
+                f"No Jira tickets in project {project_key} are labelled v{version}.",
+                {"project_key": project_key, "version": version},
+            ) from exc
+        except (requests.RequestException, anthropic.APIError) as exc:
+            raise GenerationError(f"A Jira or Anthropic request failed ({type(exc).__name__}).") from exc
+
+
 def build_generator() -> Generator:
-    # config.py has already rejected anything but "mock". A "live" branch goes here later.
+    # config.py has already validated GENERATOR and, for "live", the credentials.
+    if settings.generator == "live":
+        return LiveGenerator()
     return MockGenerator(delay=settings.mock_delay_seconds)
 
 
